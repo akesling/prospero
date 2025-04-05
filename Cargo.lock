@@ -252,17 +252,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "interpreter"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "egg",
- "ordered-float",
- "tokio",
-]
-
-[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -414,6 +403,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60946a68e5f9d28b0dc1c21bb8a97ee7d018a8b322fa57838ba31cc878e22d99"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "prospero"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "egg",
+ "ordered-float",
+ "tokio",
 ]
 
 [[package]]

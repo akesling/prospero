@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "interpreter"
+    "crates/prospero"
 ]
 
 resolver="2"
