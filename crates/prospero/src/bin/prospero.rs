@@ -19,8 +19,8 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let contents = tokio::fs::read_to_string(&args.input).await?;
-    let program = prospero::parse(&contents)?;
-    let pixels = prospero::interpret_image(&program, 1024, 1024);
+    let program = prospero::parser::parse(&contents)?;
+    let pixels = prospero::interpreter::interpret_image(&program, 1024, 1024);
     prospero::render(pixels, &args.output).await?;
 
     Ok(())
