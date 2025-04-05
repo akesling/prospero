@@ -6,4 +6,6 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+egg = { workspace = true }
+ordered-float = { workspace = true }
 tokio = { workspace = true }
