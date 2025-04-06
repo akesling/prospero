@@ -507,6 +507,7 @@ dependencies = [
  "clap",
  "egg",
  "itertools",
+ "log",
  "ordered-float",
  "rand",
  "simplelog",

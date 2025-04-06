@@ -8,6 +8,7 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 egg = { workspace = true }
 itertools = { workspace = true }
+log = { workspace = true }
 ordered-float = { workspace = true }
 rand = { workspace = true }
 simplelog = { workspace = true }

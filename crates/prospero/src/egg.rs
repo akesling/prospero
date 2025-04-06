@@ -2,6 +2,7 @@ use egg::{Analysis, Id, Language as _, PatternAst};
 
 use ordered_float::NotNan;
 
+use crate::parser::Instruction;
 pub use crate::parser::ValueType;
 
 pub type Constant = NotNan<ValueType>;
@@ -120,18 +121,94 @@ fn make_rules() -> Vec<egg::Rewrite<Prospero, ConstantFold>> {
         rw!("assoc-min"; "(min ?a (min ?b ?c))" => "(min (min ?a ?b) ?c)"),
         rw!("assoc-add"; "(+ ?a (+ ?b ?c))" => "(+ (+ ?a ?b) ?c)"),
         rw!("assoc-mul"; "(* ?a (* ?b ?c))" => "(* (* ?a ?b) ?c)"),
+
         rw!("distribute"; "(* ?a (+ ?b ?c))" => "(+ (* ?a ?b) (* ?a ?c))"),
         rw!("factor"    ; "(+ (* ?a ?b) (* ?a ?c))" => "(* ?a (+ ?b ?c))"),
 
         rw!("build-square"; "(* ?a ?a)" => "(sq ?a)"),
         rw!("decompose-square"; "(sq ?a)" => "(* ?a ?a)"),
+        // TODO(akesling): Add absolute value as an instruction.
+
+        rw!("neg-sub"; "(neg ?a)" => "(- 0.0 ?a)"),
+        rw!("sub-neg"; "(- 0.0 ?a)" => "(neg ?a)"),
+
+        rw!("sub-add"; "(- ?a ?b)" => "(+ ?a (neg ?b))"),
 
         rw!("add-0"; "(+ ?a 0.0)" => "?a"),
+        rw!("sub-0"; "(- ?a 0.0)" => "?a"),
+        rw!("sub-same"; "(- ?a ?a)" => "0.0"),
+        rw!("neg-0"; "(neg (neg ?a))" => "?a"),
         rw!("mul-0"; "(* ?a 0.0)" => "0.0"),
         rw!("mul-1"; "(* ?a 1.0)" => "?a"),
         rw!("root-1"; "(root 1.0)" => "1.0"),
         rw!("sq-1"; "(sq 1.0)" => "1.0"),
 
-        rw!("sq-mul"; "(* (sq ?a ?b) (sq ?a ?c))" => "(sq ?a (+ ?b ?c))"),
+        //rw!("sq-mul"; "(* (sq ?a ?b) (sq ?a ?c))" => "(sq ?a (+ ?b ?c))"),
     ]
+}
+
+fn expr_from_program(program: &[Instruction]) -> anyhow::Result<egg::RecExpr<Prospero>> {
+    use egg::Id;
+    use Instruction::*;
+
+    Ok(egg::RecExpr::<Prospero>::from(
+        program
+            .iter()
+            .map(|inst| {
+                Ok(match inst {
+                    VarX => Prospero::VarX,
+                    VarY => Prospero::VarY,
+                    Const(c) => Prospero::Const(NotNan::new(*c)?),
+                    Add(a, b) => Prospero::Add([Id::from(*a), Id::from(*b)]),
+                    Sub(a, b) => Prospero::Sub([Id::from(*a), Id::from(*b)]),
+                    Mul(a, b) => Prospero::Mul([Id::from(*a), Id::from(*b)]),
+                    Max(a, b) => Prospero::Max([Id::from(*a), Id::from(*b)]),
+                    Min(a, b) => Prospero::Min([Id::from(*a), Id::from(*b)]),
+                    Neg(a) => Prospero::Neg(Id::from(*a)),
+                    Square(a) => Prospero::Square(Id::from(*a)),
+                    Sqrt(a) => Prospero::Sqrt(Id::from(*a)),
+                })
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?,
+    ))
+}
+
+fn program_from_expr(expr: &egg::RecExpr<Prospero>) -> anyhow::Result<Vec<Instruction>> {
+    use Instruction::*;
+
+    expr.as_ref()
+        .iter()
+        .map(|node| {
+            Ok(match node {
+                Prospero::VarX => VarX,
+                Prospero::VarY => VarY,
+                Prospero::Const(c) => Const(c.into_inner()),
+                Prospero::Add([a, b]) => Add((*a).into(), (*b).into()),
+                Prospero::Sub([a, b]) => Sub((*a).into(), (*b).into()),
+                Prospero::Mul([a, b]) => Mul((*a).into(), (*b).into()),
+                Prospero::Max([a, b]) => Max((*a).into(), (*b).into()),
+                Prospero::Min([a, b]) => Min((*a).into(), (*b).into()),
+                Prospero::Neg(a) => Neg((*a).into()),
+                Prospero::Square(a) => Square((*a).into()),
+                Prospero::Sqrt(a) => Sqrt((*a).into()),
+            })
+        })
+        .collect()
+}
+
+pub fn simplify(program: &[Instruction]) -> anyhow::Result<Vec<Instruction>> {
+    let expr = expr_from_program(program)?;
+
+    let runner: egg::Runner<Prospero, ConstantFold> = egg::Runner::default()
+        .with_iter_limit(3)
+        .with_expr(&expr)
+        .run(&make_rules());
+    let root = runner.roots[0];
+
+    // use an Extractor to pick the best element of the root eclass
+    let extractor = egg::Extractor::new(&runner.egraph, egg::AstSize);
+    let (best_cost, best) = extractor.find_best(root);
+    log::debug!("Simplified |{}| to |{}| with cost {}", expr.len(), best.len(), best_cost);
+
+    program_from_expr(&best)
 }

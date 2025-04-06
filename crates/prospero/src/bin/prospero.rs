@@ -30,11 +30,17 @@ struct InterpretOptions {
     /// The path to write image to
     #[arg(long)]
     output: path::PathBuf,
+
+    #[arg(long)]
+    egg: bool,
 }
 
 async fn interpet(options: &InterpretOptions) -> anyhow::Result<()> {
     let contents = tokio::fs::read_to_string(&options.input).await?;
-    let program = prospero::parser::parse(&contents)?;
+    let mut program = prospero::parser::parse(&contents)?;
+    if options.egg {
+        program = prospero::egg::simplify(&program)?;
+    }
     let pixels = prospero::interpreter::interpret_image(&program, 1024, 1024);
     prospero::write_ppm(&pixels, &options.output).await?;
 
