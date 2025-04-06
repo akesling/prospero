@@ -8,6 +8,74 @@ pub mod interpreter;
 pub mod parser;
 mod utils;
 
+pub static HAIKUS: [[&str; 3]; 10] = [
+    [
+        "Marching cubes arise,",
+        "Contours carved from hidden fields—",
+        "Form from silence springs.",
+    ],
+    [
+        "Loop unrolling hums,",
+        "The hot path paved in silence,",
+        "Code bends to the wind.",
+    ],
+    [
+        "Prospero broods deep,",
+        "His island wrought from logic,",
+        "Magic born from books.",
+    ],
+    [
+        "Signed distance whispers,",
+        "Surfaces breathe through the void,",
+        "Light skims what is not.",
+    ],
+    [
+        "The JIT flames alight,",
+        "Funcs shed interpretive skins—",
+        "Swift as Ariel.",
+    ],
+    [
+        "Invisible shape,",
+        "A blend of math and shadow,",
+        "Traced by rays of thought.",
+    ],
+    [
+        "Compiler's keen eye,",
+        "Cuts branches like dead timber,",
+        "Leaves no waste behind.",
+    ],
+    [
+        "Grids and gradients,",
+        "Metaballs merge in silence—",
+        "Forms without a face.",
+    ],
+    [
+        "“My charms... all o'erthrown,”",
+        "Prospero lays staff to rest,",
+        "Even gods yield time.",
+    ],
+    [
+        "Inlining whispers,",
+        "Function walls collapse to dust—",
+        "Speed gained in each breath.",
+    ],
+];
+
+/// Print a random project-related haiku
+pub fn print_haiku() -> anyhow::Result<()> {
+    use rand::seq::IndexedRandom as _;
+
+    let mut rng = rand::rng();
+    println!(
+        "{}",
+        HAIKUS
+            .choose(&mut rng)
+            .ok_or(anyhow!("at least one haiku"))?
+            .join("\n")
+    );
+    Ok(())
+}
+
 pub async fn write_ppm(pixels: &[Vec<bool>], path: &path::Path) -> anyhow::Result<()> {
     use tokio::io::AsyncWriteExt as _;
 

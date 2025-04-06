@@ -9,5 +9,7 @@ clap = { workspace = true }
 egg = { workspace = true }
 itertools = { workspace = true }
 ordered-float = { workspace = true }
+rand = { workspace = true }
+simplelog = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true }
